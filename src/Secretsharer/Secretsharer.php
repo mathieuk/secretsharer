@@ -20,6 +20,11 @@ abstract class Secretsharer
     
 	function splitSecret($secret, $threshold, $numShares)
 	{
+        if (strlen($secret) > 64)
+        {
+            throw new \InvalidArgumentException("Hit artificial limit of 64 bytes for secrets.");
+        }
+        
 		$secretInteger = $this->_secretConverter->stringToInteger($secret);
 		$points        = $this->_secretIntegerToPoints($secretInteger, $threshold, $numShares);
 		$shares        = []; 
@@ -37,6 +42,11 @@ abstract class Secretsharer
 		$points = [];
 		foreach($shares as $share)
 		{
+            if (strlen($share) > 128)
+            {
+                throw new \InvalidArgumentException("Hit artificial limit of 128 bytes per share");
+            }
+            
 			$points[] = $this->_shareStringToPoint($share);
 		}
 
@@ -92,7 +102,9 @@ abstract class Secretsharer
     {
     	if ($threshold < 2)
         {
-    		throw new \InvalidArgumentException("The threshold (minimum number of shares to reconstruct the secret) must be larger than 2");
+    		throw new \InvalidArgumentException(
+                "The threshold (minimum number of shares to reconstruct the secret) must be larger than 2"
+            );
         }
 	
     	if ($threshold > $num_points) 
@@ -105,7 +117,7 @@ abstract class Secretsharer
     	$prime        = SecUtil\get_large_enough_prime([$int, $shares]);
         
         if ($prime === FALSE)
-            throw new \InvalidArgumentException("Oh dear");
+            throw new \InvalidArgumentException("Secret is too large");
         
     	$coefficients = SecUtil\random_polynomial($threshold - 1, $int, $prime);
     	$points       = SecUtil\get_polynomial_points($coefficients, $num_points, $prime);
