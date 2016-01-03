@@ -70,7 +70,6 @@ abstract class Secretsharer
             throw new \InvalidArgumentException("Share should have exactly one '-'");
         }
     
-    	// should be 1-'''
     	list($xString, $yString) = explode('-', $share,2);
     	return [
             $this->_shareConverter->stringToInteger($xString),
@@ -104,6 +103,10 @@ abstract class Secretsharer
         }
 	
     	$prime        = SecUtil\get_large_enough_prime([$int, $shares]);
+        
+        if ($prime === FALSE)
+            throw new \InvalidArgumentException("Oh dear");
+        
     	$coefficients = SecUtil\random_polynomial($threshold - 1, $int, $prime);
     	$points       = SecUtil\get_polynomial_points($coefficients, $num_points, $prime);
         
