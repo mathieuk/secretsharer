@@ -1,0 +1,17 @@
+This project is a port of https://github.com/blockstack/secret-sharing/ to PHP. As such I'm including the original authors. 
+
+Development Leads
+````````````````
+
+- Ryan Shea (https://github.com/rxl) <ryan@shea.io>
+- Muneeb Ali (https://github.com/muneeb-ali) <muneeb@ali.vc>
+
+Patches and Suggestions
+````````````````
+
+- Michael Flaxman (https://github.com/mflaxman)
+
+Port to PHP 
+````````````````
+
+- Mathieu Kooiman (https://github.com/mathieuk)
