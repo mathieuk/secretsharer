@@ -1,5 +1,13 @@
 {
+    "name": "mathieuk/secretsharer",
     "require-dev": {
         "phpunit/phpunit": "^4.8"
+    },
+    "bin": ["bin/split-secret", "bin/combine-secret"],
+    "autoload": {
+            "psr-4": { "Secretsharer\\": "src/Secretsharer" }
+    },
+    "autoload-dev" : {
+            "psr-4": { "Secretsharer\\Tests\\" : "tests/Secretsharer/Tests" }
     }
 }
