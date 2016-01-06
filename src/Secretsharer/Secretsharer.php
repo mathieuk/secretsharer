@@ -18,17 +18,43 @@ abstract class Secretsharer
         $this->_shareConverter  = new $class($this->_shareCharset);
     }
     
+    /**
+     * Split a secret string of max 64 bytes into $numShares and require $threshold shares to be provided
+     * to recover the secret.
+     *
+     * @param $secret string The secret to split up
+     * @param $threshold integer The amount of shares needed to recover the secret ( must be < $numShares )
+     * @param $numShares integer The amount of shares to generate
+     * @return string[] Array of shares 
+     */ 
 	function splitSecret($secret, $threshold, $numShares)
 	{
+        // SSSS only seems to work for certain key lengths. Limit to a known working length. 
         if (strlen($secret) > 64)
         {
             throw new \InvalidArgumentException("Hit artificial limit of 64 bytes for secrets.");
         }
         
+        // Obviously, we're going to need more than 1 share to reconstruct the secret
+    	if ($threshold < 2)
+        {
+    		throw new \InvalidArgumentException(
+                "The threshold (minimum number of shares to reconstruct the secret) must be larger than 2"
+            );
+        }
+	
+        // Can't require more shares than we generate
+    	if ($threshold > $numShares) 
+        {
+    		throw new \InvalidArgumentException(
+                "The threshold (minimum number of shares to reconstruct the secret) must be less than or equal to the total number of shares created."
+            );
+        }
+            
 		$secretInteger = $this->_secretConverter->stringToInteger($secret);
 		$points        = $this->_secretIntegerToPoints($secretInteger, $threshold, $numShares);
 		$shares        = []; 
-		
+
 		foreach ($points as $point)
 		{
 			$shares[] = $this->_pointToShareString($point);
@@ -37,12 +63,37 @@ abstract class Secretsharer
         return $shares;
 	}
 	
+    /**
+     * Take the provided shares and try to recover the secret. Note: when given invalid shares this will
+     * still return data but it will be gibberish.
+     *
+     * @param $shares string[] array of share strings
+     * @return string the recovered secret 
+     */
 	public function recoverSecret($shares)
 	{
+        if (!is_array($shares))
+        {
+            throw new \InvalidArgumentException("Provided shares must be array of strings");
+        }
+        
+        // Protect ourselves against many provided shares. 
+        if (count($shares) > 6)
+        {
+            throw new \InvalidArgumentException("Hit artificial limit of 6 shares for recovery");
+        }
+        
 		$points = [];
-		foreach($shares as $share)
+		foreach($shares as $idx => $share)
 		{
-            if (strlen($share) > 128)
+            // Protect ourselves against weird share variables
+            if (!is_string($share))
+            {
+                throw new \InvalidArgumentException("Share #" . ($idx+1) . " is not a string");
+            }
+            
+            // Protect ourselves against huge shares which may cause significant CPU usage 
+            if (strlen($share) > 140)
             {
                 throw new \InvalidArgumentException("Hit artificial limit of 128 bytes per share");
             }
@@ -99,22 +150,8 @@ abstract class Secretsharer
     }
     
     protected function _secretIntegerToPoints($int, $threshold, $num_points)
-    {
-    	if ($threshold < 2)
-        {
-    		throw new \InvalidArgumentException(
-                "The threshold (minimum number of shares to reconstruct the secret) must be larger than 2"
-            );
-        }
-	
-    	if ($threshold > $num_points) 
-        {
-    		throw new \InvalidArgumentException(
-                "The threshold (minimum number of shares to reconstruct the secret) must be less than or equal to the total number of shares created."
-            );
-        }
-	
-    	$prime        = SecUtil\get_large_enough_prime([$int, $shares]);
+    {	
+    	$prime        = SecUtil\get_large_enough_prime([$int, $num_points]);
         
         if ($prime === FALSE)
             throw new \InvalidArgumentException("Secret is too large");

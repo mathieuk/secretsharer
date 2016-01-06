@@ -15,11 +15,11 @@ define ('BCMATH_COMP_LEFT_BIGGER', 1);
  */
 function big_random_number($min, $max) 
 {
-    $max_number_size = strlen(strval($max));
+    mt_srand(hexdec(bin2hex(openssl_random_pseudo_bytes(7))));
     
     $difference   = bcadd(bcsub($max,$min),1);
-    $rand_percent = bcdiv(mt_rand(), mt_getrandmax(), $max_number_size); // 0 - 1.0
-    $result       = bcadd($min, bcmul($difference, $rand_percent, $max_number_size), 0);
+    $rand_percent = bcdiv(mt_rand(), mt_getrandmax(), 8); // 0 - 1.0
+    $result       = bcadd($min, bcmul($difference, $rand_percent, 8), 0);
     
     return $result;
 }
@@ -126,11 +126,15 @@ function get_polynomial_points($coefficients, $shares, $prime)
 	{
 		$y = $coefficients[0];
 		
-		for ($i = 1; $i <= count($coefficients); $i++ )
+		for ($i = 1; $i < count($coefficients); $i++ )
 		{
+            // $exp = ($x ** $i) % $prime 
 			$exp  = bc_unsigned_mod(bcpow($x, $i), $prime);
+            
+            // $term = ($coefficients[$i] * $exp) % $prime
 			$term = bc_unsigned_mod(bcmul($coefficients[$i],$exp), $prime);
 			
+            // $y = ( $y + $term ) % $prime
 			$y    = bc_unsigned_mod(bcadd($y, $term), $prime);
 		}
 		
@@ -216,6 +220,8 @@ function egcd($a,$b)
     else
     {
 		list($g,$y,$x)=egcd(bc_unsigned_mod($b,$a), $a);
+        
+        // [ $g, $x - (($b/$a)*$y), $y]
 		return [$g, bcsub($x, bcmul(bcdiv($b,$a,"0"),$y)), $y];
 	}
 }
@@ -227,6 +233,7 @@ function mod_inverse($k, $prime)
     // if ($k < 0)
 	if (bccomp($k,"0",0) === BCMATH_COMP_LEFT_SMALLER)
 	{
+        // egcd($prime, -$k)
 		$r = egcd($prime, bcmul($k,"-1"))[2];
 	}
     else
